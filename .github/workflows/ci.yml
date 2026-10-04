@@ -13,8 +13,22 @@ on:
 
 jobs:
   build-and-test:
-
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin123
+          POSTGRES_DB: account_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d account_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     strategy:
       fail-fast: false
@@ -26,19 +40,45 @@ jobs:
           - fare-payment-service
 
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: '17'
-          distribution: 'temurin'
           cache: maven
 
-      - name: Build and Test
-        working-directory: ${{ matrix.service }}
+      - name: Create PostgreSQL databases
         run: |
-          chmod +x mvnw
-          ./mvnw clean test
+          PGPASSWORD=admin123 psql -h localhost -U postgres -d account_db -c "CREATE DATABASE driver_vehicle_db;" || true
+          PGPASSWORD=admin123 psql -h localhost -U postgres -d account_db -c "CREATE DATABASE ride_management_db;" || true
+          PGPASSWORD=admin123 psql -h localhost -U postgres -d account_db -c "CREATE DATABASE fare_payment_db;" || true
+
+      - name: Make Maven Wrapper executable
+        run: chmod +x ${{ matrix.service }}/mvnw
+
+      - name: Configure service database
+        run: |
+          if [ "${{ matrix.service }}" = "account-service" ]; then
+            echo "DB_URL=jdbc:postgresql://localhost:5432/account_db" >> $GITHUB_ENV
+            echo "DB_USER=postgres" >> $GITHUB_ENV
+            echo "DB_PASSWORD=admin123" >> $GITHUB_ENV
+          elif [ "${{ matrix.service }}" = "driver-vehicle-service" ]; then
+            echo "DB_URL=jdbc:postgresql://localhost:5432/driver_vehicle_db" >> $GITHUB_ENV
+            echo "DB_USER=postgres" >> $GITHUB_ENV
+            echo "DB_PASSWORD=admin123" >> $GITHUB_ENV
+          elif [ "${{ matrix.service }}" = "ride-management-service" ]; then
+            echo "DB_URL=jdbc:postgresql://localhost:5432/ride_management_db" >> $GITHUB_ENV
+            echo "DB_USER=postgres" >> $GITHUB_ENV
+            echo "DB_PASSWORD=admin123" >> $GITHUB_ENV
+          elif [ "${{ matrix.service }}" = "fare-payment-service" ]; then
+            echo "DB_URL=jdbc:postgresql://localhost:5432/fare_payment_db" >> $GITHUB_ENV
+            echo "DB_USER=postgres" >> $GITHUB_ENV
+            echo "DB_PASSWORD=admin123" >> $GITHUB_ENV
+          fi
+
+      - name: Build and test
+        working-directory: ${{ matrix.service }}
+        run: ./mvnw clean test
