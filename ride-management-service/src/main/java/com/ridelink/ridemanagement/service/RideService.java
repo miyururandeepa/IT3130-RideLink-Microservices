@@ -95,9 +95,11 @@ public class RideService {
             throw new InvalidRideStatusException("Ride must be in ASSIGNED status to be accepted.");
         }
         
-        // if (!ride.getDriverId().equals(driverId)) {
-        //     throw new UnauthorizedRideOperationException("Only the assigned driver can accept this ride.");
-        // }
+        if (ride.getDriverId() == null || !ride.getDriverId().equals(driverId)) {
+            throw new UnauthorizedRideOperationException(
+                "Only the assigned driver can accept this ride."
+            );
+        }
 
 
         ride.setStatus(RideStatus.ACCEPTED);

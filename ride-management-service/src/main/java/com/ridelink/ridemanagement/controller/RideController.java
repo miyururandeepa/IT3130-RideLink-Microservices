@@ -105,9 +105,12 @@ public class RideController {
             if ("PASSENGER".equalsIgnoreCase(account.getRole()) && !ride.getPassengerId().equals(account.getId())) {
                 throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view your own rides.");
             }
-            // if ("DRIVER".equalsIgnoreCase(account.getRole()) && (ride.getDriverId() == null || !ride.getDriverId().equals(account.getId()))) {
-            //     throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException("You can only view rides assigned to you.");
-            // }
+            if ("DRIVER".equalsIgnoreCase(account.getRole())
+        && (ride.getDriverId() == null || !ride.getDriverId().equals(account.getId()))) {
+    throw new com.ridelink.ridemanagement.exception.UnauthorizedRideOperationException(
+            "You can only view rides assigned to you."
+    );
+}
         }
         
         return ResponseEntity.ok(ride);
