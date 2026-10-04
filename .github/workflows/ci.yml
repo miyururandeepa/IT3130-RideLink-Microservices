@@ -34,9 +34,8 @@ jobs:
           java-version: '17'
           cache: maven
 
-            - name: Make Maven Wrapper executable
-        working-directory: ${{ matrix.service }}
-        run: chmod +x mvnw
+      - name: Make Maven Wrapper executable
+        run: chmod +x ${{ matrix.service }}/mvnw
 
       - name: Build and test
         working-directory: ${{ matrix.service }}
