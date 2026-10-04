@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
@@ -46,7 +49,7 @@ public class PaymentController {
 
     @Operation(
             summary = "Get payment by ride ID",
-            description = "Retrieves the payment record associated with a ride."
+            description = "Retrieves the latest payment record associated with a ride."
     )
     @ApiResponse(
             responseCode = "200",
@@ -62,6 +65,33 @@ public class PaymentController {
 
         return paymentService.getPaymentByRideId(rideId)
                 .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(
+            summary = "Get payment status",
+            description = "Retrieves the latest payment status associated with a ride."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            description = "Payment status found"
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Payment not found for the specified ride"
+    )
+    @GetMapping("/{rideId}/status")
+    public ResponseEntity<Map<String, Object>> getPaymentStatus(
+            @PathVariable Long rideId) {
+
+        return paymentService.getPaymentStatusByRideId(rideId)
+                .map(status -> {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("rideId", rideId);
+                    response.put("paymentStatus", status);
+
+                    return ResponseEntity.ok(response);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
